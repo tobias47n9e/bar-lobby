@@ -1,0 +1,53 @@
+app-id: example.bar.lobby
+runtime: org.freedesktop.Platform
+runtime-version: "21.08"
+base: org.electronjs.Electron2.BaseApp
+base-version: "21.08"
+sdk: org.freedesktop.Sdk
+command: run.sh
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.node14
+build-options:
+  append_path: "/usr/lib/sdk/node14/bin"
+  cflags: -O2 -g
+  cxxflags: -O2 -g
+  env:
+    npm_config_nodedir: /usr/lib/sdk/node14
+    npm_config_offline: 'true'
+    NPM_CONFIG_LOGLEVEL: info
+    XDG_CACHE_HOME: /run/build/bar-lobby/flatpak-node/cache
+    npm_config_cache: /run/build/bar-lobby/flatpak-node/npm-cache
+finish-args:
+  - --share=ipc
+  - --socket=x11
+  - --socket=pulseaudio
+  - --device=dri
+  - --share=network
+  - --env=PATH=/usr/bin:/app/bin:/usr/lib/sdk/node14/bin
+modules:
+  - name: bar-lobby
+    buildsystem: simple
+    build-commands:
+      - echo "Installing NPM dependencies in build directory $(pwd) ..."
+      # Use `--ignore-scripts`, so Electron does not make a postinstall request
+      - npm ci --offline --ignore-scripts --cache=/run/build/bar-lobby/flatpak-node/npm-cache/
+      - pwd
+      - ls -al
+      - . flatpak-node/electron-builder-arch-args.sh
+      - |
+        . flatpak-node/electron-builder-arch-args.sh
+        node_modules/.bin/vue-cli-service electron:build -- $ELECTRON_BUILDER_ARCH_ARGS --linux --dir --project /run/build/bar-lobby
+      - ls -al
+      - ls -al build
+      - mkdir /app/main
+      - install -Dm755 -t /app/bin/ run.sh
+      # Copy files to /run/build/bar-lobby
+      - cp -Rp . /app/bar-lobby
+    sources:
+      - type: git
+        path: .
+      - flatpak/generated-sources.json
+      - type: script
+        dest-filename: run.sh
+        commands:
+          - zypak-wrapper.sh /app/main/spring-launcher "$@"
