@@ -33,6 +33,9 @@ modules:
       - npm ci --offline --ignore-scripts --cache=/run/build/bar-lobby/flatpak-node/npm-cache/
       - pwd
       - ls -al
+      - ls -al node_modules/electron
+      - cd node_modules/electron && node install.js
+      - node_modules/.bin/vue-cli-service help
       - . flatpak-node/electron-builder-arch-args.sh
       - |
         . flatpak-node/electron-builder-arch-args.sh
